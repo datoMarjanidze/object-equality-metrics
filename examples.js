@@ -30,11 +30,45 @@ const titleOptions = Object.freeze({
 		},
 		boolean: { }
 	},
-	weight: 1,
+	weight: .9
+});
+
+const codeOptions = Object.freeze({
+	strategies: {
+
+	},
+	valueRules: {
+		string: {
+			exact: false
+		},
+		number: {
+			exact: true
+		},
+		boolean: { }
+	},
+	weight: 0
+});
+
+const hasBudgetOptions = Object.freeze({
+	strategies: {
+
+	},
+	valueRules: {
+		string: {
+			exact: false
+		},
+		number: {
+			exact: true
+		},
+		boolean: { }
+	},
+	weight: .1
 });
 
 keySpecificOptions = Object.freeze({
-	title: titleOptions
+	title: titleOptions,
+	code: codeOptions,
+	hasBudget: hasBudgetOptions
 });
 
 // const globalOptions = Object.freeze({

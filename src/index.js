@@ -34,13 +34,12 @@ module.exports = class {
 	}
 
 	get info() {
-		return new Promise(async resolve => {
-			await this._processValues();
-			resolve({
-				objectsMatchProbability: this._objectsMatchProbability,
-				valuesProbabilities: this._valuesProbabilities
-			});
-		});
+		this._processValues();
+
+		return {
+			objectsMatchProbability: this._objectsMatchProbability,
+			valuesProbabilities: this._valuesProbabilities
+		};
 	}
 
 	get _objectsMatchProbability() {
@@ -69,52 +68,66 @@ module.exports = class {
 	}
 
 	_processValues() {
-		return new Promise(resolve => {
-			const keySpecificOptionsKeys = Object.keys(this.keySpecificOptions);
-			
-			keySpecificOptionsKeys.forEach(key => {
-				if (String(this.objectOne[key]).match(this._numberRegExp) && String(this.objectTwo[key]).match(this._numberRegExp) && this.keySpecificOptions[key].valueRules.number.exact) { // Number
-					this._valuesProbabilities[key].entire = this.objectOne[key] === this.objectTwo[key] ? 1 : 0;
-				}
-				else if (String(this.objectOne[key]).match(this._booleanRegExp) && String(this.objectTwo[key]).match(this._booleanRegExp)) { // Boolean
-					this._valuesProbabilities[key].entire = this.objectOne[key] === this.objectTwo[key] ? 1 : 0;
-				}
-				else { // String
-					const stringOne = String(this.objectOne[key]).toLowerCase(),
-					stringTwo = String(this.objectTwo[key]).toLowerCase();
-					
-					const stringOneWords = stringOne.split(" "), 
-					stringTwoWords = stringTwo.split(" ");
-					
-					Strategies.names.forEach(strategyKey => {
-						if (typeof this.keySpecificOptions[key].strategies[strategyKey] !== "undefined") {
-							if (strategyKey === "levenshtein-distance") {
-								const results = [];
-								stringOneWords.forEach((stringOneWord, i) => {
-									results[i] = { stringOneWordMismatch: Infinity, holeLength: stringOneWord.length };
+		const keySpecificOptionsKeys = Object.keys(this.keySpecificOptions);
+		var weightsAndMatchProbabilities = [];
 
-									stringTwoWords.forEach(stringTwoWord => {
-										var res = new Strategies(stringOneWord, stringTwoWord).levenshteinDistance();
-										results[i].stringOneWordMismatch > res ? results[i].stringOneWordMismatch = res : "";
-									});
+		keySpecificOptionsKeys.forEach(key => {
+			if (String(this.objectOne[key]).match(this._numberRegExp) && String(this.objectTwo[key]).match(this._numberRegExp) && this.keySpecificOptions[key].valueRules.number.exact) { // Number
+				const matchProbability = this.objectOne[key] === this.objectTwo[key] ? 1 : 0;
+				weightsAndMatchProbabilities.push({ matchProbability: matchProbability, weight: this.keySpecificOptions[key].weight });
+				this._valuesProbabilities[key].entire = matchProbability;
+			}
+			else if (String(this.objectOne[key]).match(this._booleanRegExp) && String(this.objectTwo[key]).match(this._booleanRegExp)) { // Boolean
+				const matchProbability = this.objectOne[key] === this.objectTwo[key] ? 1 : 0;
+				weightsAndMatchProbabilities.push({ matchProbability: matchProbability, weight: this.keySpecificOptions[key].weight });
+				this._valuesProbabilities[key].entire = matchProbability;
+			}
+			else { // String
+				const stringOne = String(this.objectOne[key]).toLowerCase(),
+				stringTwo = String(this.objectTwo[key]).toLowerCase();
+				
+				const stringOneWords = stringOne.split(" "), 
+				stringTwoWords = stringTwo.split(" ");
+				
+				Strategies.names.forEach(strategyKey => {
+					if (typeof this.keySpecificOptions[key].strategies[strategyKey] !== "undefined") {
+						if (strategyKey === "levenshtein-distance") {
+							const results = [];
+							stringOneWords.forEach((stringOneWord, i) => {
+								results[i] = { stringOneWordMismatch: Infinity, holeLength: stringOneWord.length };
+
+								stringTwoWords.forEach(stringTwoWord => {
+									var res = new Strategies(stringOneWord, stringTwoWord).levenshteinDistance();
+									results[i].stringOneWordMismatch > res ? results[i].stringOneWordMismatch = res : "";
 								});
+							});
 
-								const allWordsLength = results.reduce((acc, currValue) => {
-									return acc += currValue.holeLength;
-								}, 0);
-								const allWordsMismatch = results.reduce((acc, currValue) => {
-									return acc += currValue.stringOneWordMismatch;
-								}, 0);
-								
-
-								this._valuesProbabilities[key].byStrategies[strategyKey] = (((allWordsLength - allWordsMismatch) * 100) / allWordsLength) / 100;
-							}
+							const allWordsLength = results.reduce((acc, currValue) => {
+								return acc += currValue.holeLength;
+							}, 0);
+							const allWordsMismatch = results.reduce((acc, currValue) => {
+								return acc += currValue.stringOneWordMismatch;
+							}, 0);
+							
+							const matchProbability = (((allWordsLength - allWordsMismatch) * 100) / allWordsLength) / 100;
+							weightsAndMatchProbabilities.push({ matchProbability: matchProbability, weight: this.keySpecificOptions[key].weight });
+							this._valuesProbabilities[key].entire = matchProbability;
+							this._valuesProbabilities[key].byStrategies[strategyKey] = matchProbability;
 						}
-					});
-				}
-			});
-			
-			resolve();
+					}
+				});
+			}
 		});
+
+		this._objectsMatchProbability = this.calculateObjectMatchProbability(weightsAndMatchProbabilities);
+	}
+
+	calculateObjectMatchProbability(weightsAndMatchProbabilities) {
+		console.log(weightsAndMatchProbabilities)
+		const weightsSum = weightsAndMatchProbabilities.reduce((acc, currValue) => acc += currValue.weight, 0);
+		console.log(weightsSum)
+		return weightsAndMatchProbabilities.reduce((acc, currValue) => {
+			return acc += (currValue.matchProbability / weightsSum) * currValue.weight; 
+		}, 0);
 	}
 };
