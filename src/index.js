@@ -123,9 +123,8 @@ module.exports = class {
 	}
 
 	calculateObjectMatchProbability(weightsAndMatchProbabilities) {
-		console.log(weightsAndMatchProbabilities)
 		const weightsSum = weightsAndMatchProbabilities.reduce((acc, currValue) => acc += currValue.weight, 0);
-		console.log(weightsSum)
+
 		return weightsAndMatchProbabilities.reduce((acc, currValue) => {
 			return acc += (currValue.matchProbability / weightsSum) * currValue.weight; 
 		}, 0);
