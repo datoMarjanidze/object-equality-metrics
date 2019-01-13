@@ -71,27 +71,7 @@ keySpecificOptions = Object.freeze({
 	hasBudget: hasBudgetOptions
 });
 
-// const globalOptions = Object.freeze({
-// 	strategies: {
-// 		"hamming-distance": false,
-// 		"sorensen-dice-coefficient": false,
-// 		"levenshtein-distance": false,
-// 		"smith-distance": false,
-// 	},
-// 	valueRules: {
-// 		string: { },
-// 		number: {
-// 			exact: true
-// 		},
-// 		boolean: { }
-// 	}
-// });
-
-(async () => {
-	const equality1 = new ObjectEqualityMetrics(objectOne, objectTwo, keySpecificOptions);
-	console.log(JSON.stringify(await equality1.info))
-})();
-
-// const Strategies = require("./src/strategies");
-// const levenshteinDistance = (new Strategies("2000.2", "2000.1")).levenshteinDistance();
-// console.log(levenshteinDistance);
+const equality1 = new ObjectEqualityMetrics(objectOne, objectTwo, keySpecificOptions);
+console.table(equality1.info)
+console.log(JSON.stringify(equality1.info));
+// console.log(equality1.info)
