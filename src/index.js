@@ -121,7 +121,7 @@ module.exports = class {
 
 		this._objectsMatchProbability = this.calculateObjectMatchProbability(weightsAndMatchProbabilities);
 	}
-
+	
 	calculateObjectMatchProbability(weightsAndMatchProbabilities) {
 		console.log(weightsAndMatchProbabilities)
 		const weightsSum = weightsAndMatchProbabilities.reduce((acc, currValue) => acc += currValue.weight, 0);
